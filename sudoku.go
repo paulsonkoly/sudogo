@@ -211,6 +211,7 @@ func (b board) print() {
 func main() {
 	b := board{}
 	b.allPossible()
+  // https://sudoku2.com/play-the-hardest-sudoku-in-the-world/
 	b.fill(coord.Coord{X: 0, Y: 0}, 8)
 	b.fill(coord.Coord{X: 2, Y: 1}, 3)
 	b.fill(coord.Coord{X: 3, Y: 1}, 6)
