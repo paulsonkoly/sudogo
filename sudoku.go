@@ -92,69 +92,6 @@ func (b *board) only_place() bool {
 		}
 	}
 
-	// for i := 0; i < 9; i++ {
-	// 	for _, c := range (row(coord{0, dim(i)})) {
-	// 	}
-	// 	for ix, cnt := range counts {
-	// 		if cnt == 1 {
-	// 			for _, c := range (row(coord{0, dim(i)})) {
-	// 					b.fill(c, cellVal(ix+1))
-	// 					return true
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-	//
-	// for i := 0; i < 9; i++ {
-	// 	counts := [9]int{}
-	// 	for _, c := range (column(coord{dim(i), 0})) {
-	// 		can := b.at(c).can
-	// 		for j := 0; j < 9; j++ {
-	// 			if can&(1<<j) != 0 {
-	// 				counts[j] += 1
-	// 			}
-	// 		}
-	// 	}
-	// 	for ix, cnt := range counts {
-	// 		if cnt == 1 {
-	// 			for _, c := range (column(coord{dim(i), 0})) {
-	// 				if b.at(c).can&(1<<ix) != 0 {
-	// 					b.fill(c, cellVal(ix+1))
-	// 					return true
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-	//
-	// boxes := [...]coord{
-	// 	{0, 0}, {3, 0}, {6, 0},
-	// 	{0, 3}, {3, 3}, {6, 3},
-	// 	{0, 6}, {3, 6}, {6, 6},
-	// }
-	//
-	// for _, tl := range boxes {
-	// 	counts := [9]int{}
-	// 	for _, c := range box(tl) {
-	// 		can := b.at(c).can
-	// 		for j := 0; j < 9; j++ {
-	// 			if can&(1<<j) != 0 {
-	// 				counts[j] += 1
-	// 			}
-	// 		}
-	// 	}
-	// 	for ix, cnt := range counts {
-	// 		if cnt == 1 {
-	// 			for _, c := range box(tl) {
-	// 				if b.at(c).can&(1<<ix) != 0 {
-	// 					b.fill(c, cellVal(ix+1))
-	// 					return true
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
 	return false
 }
 
@@ -226,7 +163,6 @@ func (b *board) tries(maxWidth int) queue {
 	for i.Next() {
 		c := i.Value().(coord.Coord)
 		cell := b.at(c)
-		// fmt.Printf("%v %b %d - %d\n", c, cell.can, bits.OnesCount16(uint16(cell.can)), maxWidth)
 		if cell.can != 0 && bits.OnesCount16(uint16(cell.can)) <= maxWidth {
 			cnt := bits.OnesCount16(uint16(cell.can))
 			heap.Push(&q, prioCoord{count: cnt, coord: c})
@@ -319,44 +255,6 @@ func main() {
 	b.fill(coord.Coord{X: 1, Y: 8}, 9)
 	b.fill(coord.Coord{X: 6, Y: 8}, 4)
 
-	// b.fill(coord{2, 0}, 1)
-	// b.fill(coord{5, 0}, 2)
-	// b.fill(coord{8, 0}, 4)
-	// b.fill(coord{2, 1}, 7)
-	// b.fill(coord{3, 1}, 5)
-	// b.fill(coord{5, 1}, 9)
-	// b.fill(coord{6, 1}, 6)
-	// b.fill(coord{0, 2}, 4)
-	// b.fill(coord{3, 2}, 8)
-	// b.fill(coord{4, 2}, 3)
-	// b.fill(coord{7, 2}, 5)
-	// b.fill(coord{8, 2}, 7)
-	// b.fill(coord{0, 3}, 9)
-	// b.fill(coord{1, 3}, 4)
-	// b.fill(coord{5, 3}, 7)
-	// b.fill(coord{7, 3}, 3)
-	// b.fill(coord{8, 3}, 2)
-	// b.fill(coord{3, 4}, 3)
-	// b.fill(coord{4, 4}, 9)
-	// b.fill(coord{5, 4}, 6)
-	// b.fill(coord{8, 4}, 5)
-	// b.fill(coord{1, 5}, 7)
-	// b.fill(coord{2, 5}, 3)
-	// b.fill(coord{4, 5}, 8)
-	// b.fill(coord{6, 5}, 1)
-	// b.fill(coord{0, 6}, 7)
-	// b.fill(coord{1, 6}, 3)
-	// b.fill(coord{2, 6}, 4)
-	// b.fill(coord{0, 7}, 8)
-	// b.fill(coord{3, 7}, 7)
-	// b.fill(coord{6, 7}, 4)
-	// b.fill(coord{7, 7}, 2)
-	// b.fill(coord{8, 7}, 9)
-	// b.fill(coord{1, 8}, 9)
-	// b.fill(coord{2, 8}, 2)
-	// b.fill(coord{3, 8}, 4)
-	// b.fill(coord{5, 8}, 5)
-	// b.fill(coord{6, 8}, 3)
 	b.print()
 	fmt.Println("=========================")
 	b.iterate()
