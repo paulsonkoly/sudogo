@@ -3,23 +3,15 @@ package main
 import (
 	"container/heap"
 	"fmt"
-	"math/bits"
 
+	"github.com/phaul/sudoku/cell"
 	"github.com/phaul/sudoku/coord"
 )
 
-type cellVal uint8  // value of a cell, 0 empty, 1-9 otherwise
-type cellCan uint16 // bitmap of what cell can be 0-8 bits used to indicate a cell can take ix+1 as value
-
-type cell struct {
-	val cellVal // value of the cell
-	can cellCan // possibilities for the cell
-}
-
-type board [9 * 9]cell // a sudoku board
+type board [9 * 9]cell.Cell // a sudoku board
 
 // address a board with x, y 0-8 coordinates. 0, 0 is the top left corner and 8, 0 is the top right
-func (b *board) at(c coord.Coord) *cell {
+func (b *board) at(c coord.Coord) *cell.Cell {
 	return &b[coord.Ctoi(c)]
 }
 
@@ -28,23 +20,24 @@ func (b *board) allPossible() {
 	i := coord.All()
 
 	for i.Next() {
-		b.at(i.Value().(coord.Coord)).can = 0x1ff
+		b.at(i.Value().(coord.Coord)).SetAll()
 	}
 }
 
 // fill a cell in the board at c with v
-func (b *board) fill(c coord.Coord, v cellVal) {
-	*b.at(c) = cell{val: v, can: 0}
+func (b *board) fill(c coord.Coord, v cell.ValT) {
+	*b.at(c) = cell.New(v)
 
 	i := coord.Composed(coord.Composed(coord.Row(c), coord.Column(c)), coord.Box(c))
 
 	for i.Next() {
 		c = i.Value().(coord.Coord)
-		*b.at(c) = cell{b.at(c).val, b.at(c).can & (^(1 << (v - 1)))}
+		b.at(c).Drop(v)
 	}
 }
 
 // look for a cell that has a single possibility and fill
+//
 // return true if any were found or false otherwise
 func (b *board) singlePossible() bool {
 	r := false
@@ -54,15 +47,16 @@ func (b *board) singlePossible() bool {
 		co := i.Value().(coord.Coord)
 		c := b.at(co)
 
-		if c.can != 0 && c.can&(c.can-1) == 0 {
-			b.fill(co, cellVal(bits.TrailingZeros16(uint16(c.can))+1))
+		if c.IsSingle() {
+			b.fill(co, c.FirstPossibility())
 			r = true
 		}
 	}
 	return r
 }
 
-// finds a digit that can only go in one place, and fills it in
+// find a digit that can only go in one place, and fill it in
+//
 // returns true if one found
 func (b *board) onlyPlace() bool {
 	i := coord.Composed(coord.Composed(coord.AllRows(), coord.AllColumns()), coord.AllBoxes())
@@ -72,19 +66,19 @@ func (b *board) onlyPlace() bool {
 		counts := [9]int{}
 
 		for r.Next() {
-			can := b.at(r.Value().(coord.Coord)).can
-			for j := 0; j < 9; j++ {
-				if can&(1<<j) != 0 {
-					counts[j] += 1
+			c := b.at(r.Value().(coord.Coord))
+			for j := 1; j <= 9; j++ {
+				if c.IsPossible(cell.ValT(j)) {
+					counts[j-1] += 1
 				}
 			}
 		}
 		r.Reset()
 		for r.Next() {
 			co := r.Value().(coord.Coord)
-			for j := 0; j < 9; j++ {
-				if b.at(co).can&(1<<j) != 0 && counts[j] == 1 {
-					b.fill(co, cellVal(j+1))
+			for j := 1; j <= 9; j++ {
+				if b.at(co).IsPossible(cell.ValT(j)) && counts[j-1] == 1 {
+					b.fill(co, cell.ValT(j))
 					return true
 				}
 			}
@@ -111,6 +105,7 @@ func (b *board) iterate() {
 // then checks if solved or has a contradiction due to incorrect guess
 // then tries the easiest guess
 func (b *board) solve(depth, maxDepth, maxWidth int) bool {
+	// fmt.Printf("%d / %d\n", depth, maxDepth)
 	if depth >= maxDepth {
 		return false
 	}
@@ -129,7 +124,7 @@ func (b *board) solved() bool {
 	i := coord.All()
 
 	for i.Next() {
-		if b.at(i.Value().(coord.Coord)).val == 0 {
+		if b.at(i.Value().(coord.Coord)).IsEmpty() {
 			return false
 		}
 	}
@@ -170,9 +165,9 @@ func (b *board) tries(maxWidth int) queue {
 	for i.Next() {
 		c := i.Value().(coord.Coord)
 		cell := b.at(c)
-		if cell.can != 0 && bits.OnesCount16(uint16(cell.can)) <= maxWidth {
-			cnt := bits.OnesCount16(uint16(cell.can))
-			heap.Push(&q, prioCoord{count: cnt, coord: c})
+		p := cell.PossibilityCount()
+		if 0 < p && p <= maxWidth {
+			heap.Push(&q, prioCoord{count: p, coord: c})
 		}
 	}
 
@@ -183,13 +178,13 @@ func (b *board) try(depth, maxDepth, maxWidth int) bool {
 	// look for the lowest bitcount candidate
 	for q := b.tries(maxWidth); q.Len() > 0; {
 		c := heap.Pop(&q).(prioCoord).coord
+		i := b.at(c).Possibilities()
 
-		// for all candidates of the cell
-		for can := b.at(c).can; can != 0; can &= can - 1 {
+		// for all candidates for the cell
+		for i.Next() {
+			v := i.Value()
 			bb := board{}
 			copy(bb[:], b[:])
-
-			v := cellVal(bits.TrailingZeros16(uint16(can&-can)) + 1)
 
 			bb.fill(c, v)
 			if bb.solve(depth+1, maxDepth, maxWidth) {
@@ -208,7 +203,7 @@ func (b *board) contradicts() bool {
 	for i.Next() {
 		c := b.at(i.Value().(coord.Coord))
 
-		if c.val == 0 && c.can == 0 {
+		if c.Value == 0 && c.PossibilityCount() == 0 {
 			return true
 		}
 	}
@@ -226,10 +221,10 @@ func (b board) print() {
 		if c.X%3 == 0 {
 			fmt.Print("|")
 		}
-		if b.at(c).val == 0 {
+		if b.at(c).Value == 0 {
 			fmt.Print(" ")
 		} else {
-			fmt.Print(b.at(c).val)
+			fmt.Print(b.at(c).Value)
 		}
 		if c.X == 8 {
 			fmt.Println("|")
