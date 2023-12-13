@@ -19,12 +19,11 @@ type cell struct {
 type board [9 * 9]cell // a sudoku board
 
 // address a board with x, y 0-8 coordinates. 0, 0 is the top left corner and 8, 0 is the top right
-// errors if coordinates are out of bounds
 func (b *board) at(c coord.Coord) *cell {
 	return &b[coord.Ctoi(c)]
 }
 
-// sets all cells to all possible
+// sets all cells to all 9 digits are possible
 func (b *board) allPossible() {
 	i := coord.All()
 
@@ -45,7 +44,7 @@ func (b *board) fill(c coord.Coord, v cellVal) {
 	}
 }
 
-// look for a cell that is single possible and fill
+// look for a cell that has a single possibility and fill
 // return true if any were found or false otherwise
 func (b *board) singlePossible() bool {
 	r := false
@@ -95,6 +94,10 @@ func (b *board) onlyPlace() bool {
 	return false
 }
 
+// wrapper for solve with iterative deepening
+// tune constants here for performance
+// maxDepth limits the number of guesses allowed before solve returns with false
+// maxWidth limits where guesses can happen, don't guess a cell if it has more possiblities than maxWidth
 func (b *board) iterate() {
 	for maxDepth := 3; true; maxDepth++ {
 		if b.solve(0, maxDepth, max(maxDepth/3, 2)) {
@@ -103,6 +106,10 @@ func (b *board) iterate() {
 	}
 }
 
+// tries to do a solve
+// first it fills in that we know for sure
+// then checks if solved or has a contradiction due to incorrect guess
+// then tries the easiest guess
 func (b *board) solve(depth, maxDepth, maxWidth int) bool {
 	if depth >= maxDepth {
 		return false
@@ -194,7 +201,7 @@ func (b *board) try(depth, maxDepth, maxWidth int) bool {
 	return false
 }
 
-// there is a cell that has no possible values but also not filled in
+// there is a cell that has no possible value left but also not filled in
 func (b *board) contradicts() bool {
 	i := coord.All()
 
