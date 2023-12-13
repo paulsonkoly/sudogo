@@ -25,7 +25,7 @@ func (b *board) at(c coord.Coord) *cell {
 }
 
 // sets all cells to all possible
-func (b *board) all_possible() {
+func (b *board) allPossible() {
 	i := coord.All()
 
 	for i.Next() {
@@ -47,7 +47,7 @@ func (b *board) fill(c coord.Coord, v cellVal) {
 
 // look for a cell that is single possible and fill
 // return true if any were found or false otherwise
-func (b *board) single_possible() bool {
+func (b *board) singlePossible() bool {
 	r := false
 	i := coord.All()
 
@@ -65,7 +65,7 @@ func (b *board) single_possible() bool {
 
 // finds a digit that can only go in one place, and fills it in
 // returns true if one found
-func (b *board) only_place() bool {
+func (b *board) onlyPlace() bool {
 	i := coord.Composed(coord.Composed(coord.AllRows(), coord.AllColumns()), coord.AllBoxes())
 
 	for i.Next() {
@@ -107,7 +107,7 @@ func (b *board) solve(depth, maxDepth, maxWidth int) bool {
 	if depth >= maxDepth {
 		return false
 	}
-	for b.single_possible() || b.only_place() {
+	for b.singlePossible() || b.onlyPlace() {
 	}
 	if b.solved() {
 		return true
@@ -232,7 +232,7 @@ func (b board) print() {
 
 func main() {
 	b := board{}
-	b.all_possible()
+	b.allPossible()
 	b.fill(coord.Coord{X: 0, Y: 0}, 8)
 	b.fill(coord.Coord{X: 2, Y: 1}, 3)
 	b.fill(coord.Coord{X: 3, Y: 1}, 6)
