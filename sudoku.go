@@ -6,6 +6,7 @@ import (
 
 	"github.com/phaul/sudoku/cell"
 	"github.com/phaul/sudoku/coord"
+	"github.com/phaul/sudoku/cqueue"
 )
 
 type board [9 * 9]cell.Cell // a sudoku board
@@ -131,35 +132,10 @@ func (b *board) solved() bool {
 	return true
 }
 
-// priority queue for coordinates based on the amount of candidates
-type prioCoord struct {
-	count int
-	coord coord.Coord
-}
-
-type queue []prioCoord
-
-func (q queue) Len() int           { return len(q) }
-func (q queue) Less(i, j int) bool { return q[i].count < q[j].count }
-func (q queue) Swap(i, j int)      { q[i], q[j] = q[j], q[i] }
-
-func (q *queue) Push(x any) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
-	*q = append(*q, x.(prioCoord))
-}
-
-func (q *queue) Pop() any {
-	old := *q
-	n := len(old)
-	x := old[n-1]
-	*q = old[0 : n-1]
-	return x
-}
 
 // coordinates to try in the order of least amount of possible candidates to most
-func (b *board) tries(maxWidth int) queue {
-	q := make(queue, 0, 16)
+func (b *board) tries(maxWidth int) cqueue.Queue {
+  q := cqueue.New()
 	i := coord.All()
 
 	for i.Next() {
@@ -167,7 +143,7 @@ func (b *board) tries(maxWidth int) queue {
 		cell := b.at(c)
 		p := cell.PossibilityCount()
 		if 0 < p && p <= maxWidth {
-			heap.Push(&q, prioCoord{count: p, coord: c})
+			heap.Push(&q, cqueue.PrioCoord{Count: p, Coord: c})
 		}
 	}
 
@@ -177,7 +153,7 @@ func (b *board) tries(maxWidth int) queue {
 func (b *board) try(depth, maxDepth, maxWidth int) bool {
 	// look for the lowest bitcount candidate
 	for q := b.tries(maxWidth); q.Len() > 0; {
-		c := heap.Pop(&q).(prioCoord).coord
+		c := heap.Pop(&q).(cqueue.PrioCoord).Coord
 		i := b.at(c).Possibilities()
 
 		// for all candidates for the cell
