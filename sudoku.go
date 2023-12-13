@@ -89,7 +89,7 @@ func (b *board) onlyPlace() bool {
 	return false
 }
 
-// wrapper for solve with iterative deepening
+// wrapper for solving with iterative deepening
 // tune constants here for performance
 // maxDepth limits the number of guesses allowed before solve returns with false
 // maxWidth limits where guesses can happen, don't guess a cell if it has more possiblities than maxWidth
@@ -102,7 +102,7 @@ func (b *board) iterate() {
 }
 
 // tries to do a solve
-// first it fills in that we know for sure
+// first it fills in what we know for sure
 // then checks if solved or has a contradiction due to incorrect guess
 // then tries the easiest guess
 func (b *board) solve(depth, maxDepth, maxWidth int) bool {

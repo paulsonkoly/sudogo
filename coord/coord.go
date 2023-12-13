@@ -26,7 +26,7 @@
 //
 // Example 3:
 //
-// # Composing 2 iterators into and iterator that calls the constituents in order
+// # Composing 2 iterators into an iterator that calls the constituents in order
 //
 // l := coord.Coord{X: 5, Y: 3}
 // c := coord.Composed(coord.Row(l), coord.Column(l))
